@@ -76,37 +76,59 @@ If you are using IntelliJ:
 Settings > Build, Execution, Deployment > Compiler > Java Compiler
 ```
 
-## Configuring the Zeebe cluster connection
+## Configuring Camunda 8 connection
 
-Connections to Camunda 8 SaaS can be configured by creating the following entries in `src/main/resources/application.properties`:
+The default properties for setting up all connection details are hidden in modes. Each connection mode has meaningful defaults that will make your life easier.
 
-```properties
-zeebe.client.cloud.clusterId=xxx
-zeebe.client.cloud.clientId=xxx
-zeebe.client.cloud.clientSecret=xxx
-zeebe.client.cloud.region=bru-2
+The mode is set on `camunda.client.mode` and can be `simple`, `oidc` or `saas`. Further usage of each mode is explained below.
+
+> Zeebe will now also be configured with an URL (`http://localhost:26500` instead of `localhost:26500` + plaintext connection flag)
+
+### Saas
+
+Connections to Camunda SaaS can be configured by creating the following entries in your `src/main/resources/application.yaml`:
+
+```yaml
+camunda:
+  client:
+    mode: saas
+    auth:
+      client-id: <your client id>
+      client-secret: <your client secret>
+    cluster-id: <your cluster id>
+    region: <your cluster region>
 ```
 
-You can also configure the connection to a Self-Managed Zeebe broker:
+### Oidc
 
-```properties
-zeebe.client.broker.grpcAddress=https://127.0.0.1:26500
-zeebe.client.broker.restAddress=https://127.0.0.1:8080
-zeebe.client.security.plaintext=true
+If you set up a self-managed cluster with identity, keycloak is used as default identity provider. As long as the port config (from docker-compose or port-forward with the helm charts) is default, you need to configure the according spring profile plus client credentials:
+
+```yaml
+camunda:
+  client:
+    mode: oidc
+    auth:
+      client-id: <your client id>
+      client-secret: <your client secret>
 ```
 
-You can enforce the right connection mode, for example if multiple contradicting properties are set:
+If you have different endpoints for your applications or want to disable a client, you can configure this:
 
-```properties
-zeebe.client.connection-mode=CLOUD
-zeebe.client.connection-mode=ADDRESS
-```
-
-You can specify credentials in the following way:
-
-```properties
-common.clientId=xxx
-common.clientSecret=xxx
+```yaml
+camunda:
+  client:
+    mode: oidc
+    tenant-ids:
+      - <default>
+    auth:
+      oidc-type: keycloak
+      issuer: http://localhost:18080/auth/realms/camunda-platform
+    zeebe:
+      enabled: true
+      grpc-address: http://localhost:26500
+      rest-address: http://localhost:8080
+      prefer-rest-over-grpc: false
+      audience: zeebe-api
 ```
 
 ## Obtain the Zeebe client
@@ -150,3 +172,29 @@ public void handleJobFoo(final ActivatedJob job) {
 ```
 
 See [the configuration documentation](/docs/apis-tools/spring-zeebe-sdk/configuration.md) for a more in-depth discussion on parameters and configuration options of job workers.
+
+## Writing test cases
+
+You can start up an in-memory test engine and do assertions by adding this annotation to you test class:
+
+```java
+import io.camunda.zeebe.spring.test.embedded.ZeebeSpringTest;
+
+@SpringBootTest
+@ZeebeSpringTest
+public class TestMyProcess {
+  // ...
+```
+
+Note that **the test engines requires Java version >= 21**. If you cannot run on this Java version, you can use [Testcontainers](https://www.testcontainers.org/) **instead**. Testcontainers require that you have a Docker installation locally available on the developer machine. Use this annotation:
+
+```java
+import io.camunda.zeebe.spring.test.testcontainer.ZeebeSpringTest;
+
+@SpringBootTest
+@ZeebeSpringTest
+public class TestMyProcess {
+  // ...
+```
+
+An example test case is [available here](https://github.com/camunda/zeebe/blob/main/spring-boot-starter-camunda-sdk/src/test/java/io/camunda/zeebe/spring/client/jobhandler/JobHandlerEmbeddedTest.java).
