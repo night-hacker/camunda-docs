@@ -236,6 +236,13 @@ zeebe.client.cloud.port=443
 zeebe.client.cloud.auth-url=https://login.cloud.camunda.io/oauth/token
 ```
 
+other cloud configurations:
+
+```properties
+zeebe.client.cloud.clientSecret=yourClientSecret
+zeebe.client.cloud.region=bru-2
+```
+
 As an alternative, you can use the [Zeebe client environment variables](/docs/apis-tools/java-client/index.md#bootstrapping).
 
 ### Default task type
@@ -332,6 +339,46 @@ You can override this property as well:
 
 ```properties
 zeebe.client.worker.override.tenant-ids=myThirdTenant
+```
+
+### Override authority
+
+The alternative authority to use, commonly in the form `host` or `host:port`:
+
+```properties
+zeebe.client.security.overrideAuthority=host:port
+```
+
+### CA certificate
+
+Path to a root CA certificate to be used instead of the certificate in the default store:
+
+```properties
+zeebe.client.security.certPath=host:port
+```
+
+### Message time to live
+
+The time-to-live which is used when none is provided for a message (default 1H):
+
+```properties
+zeebe.client.message.timeToLive=PT2H
+```
+
+### Max message size
+
+A custom maxMessageSize allows the client to receive larger or smaller responses from Zeebe. Technically, it specifies the maxInboundMessageSize of the gRPC channel (default 4MB):
+
+```properties
+zeebe.client.message.maxMessage-size=3
+```
+
+### Keep alive
+
+Time interval between keep alive messages sent to the gateway (default is 45s):
+
+```properties
+zeebe.client.broker.keepAlive=PT60S
 ```
 
 ## Observing metrics
